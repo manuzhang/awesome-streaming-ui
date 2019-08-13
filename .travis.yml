@@ -22,8 +22,7 @@ before_script:
 - git clone https://github.com/manuzhang/github-app
 - export PATH=/usr/bin:$PATH
 script:
-- cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos
- --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
+- cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
 - sh deploy.sh
 
 dd:
