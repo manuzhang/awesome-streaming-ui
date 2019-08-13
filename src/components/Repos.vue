@@ -14,7 +14,7 @@
   <v-data-table
     :headers="headers"
     :items="items"
-    :sort-by="['updatedAt']"
+    :sort-by="['pushedAt']"
     :sort-desc="[true]"
     :items-per-page="100"
     :search="search"
@@ -28,7 +28,7 @@
           <td>{{ item.description }}</td>
           <td>{{ item.stars }}</td>
           <td>{{ item.forks }}</td>
-          <td>{{ item.updatedAt }}</td>
+          <td>{{ item.pushedAt }}</td>
         </tr>
       </tbody>
     </template>
@@ -49,7 +49,7 @@ export default {
         { text: 'Description', value: 'description', sortable: false },
         { text: 'Stars', value: 'stars' },
         { text: 'Forks', value: 'forks' },
-        { text: 'UpdatedAt', value: 'updatedAt' }
+        { text: 'LastUpdate', value: 'pushedAt' }
       ],
       items: repos,
     };
