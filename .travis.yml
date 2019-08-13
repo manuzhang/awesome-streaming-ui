@@ -5,6 +5,14 @@ node_js:
 cache: yarn
 jdk: oraclejdk8
 
+addons:
+  apt:
+    sources:
+      - sourceline: 'deb https://dl.bintray.com/sbt/debian /'
+        key_url: 'https://bintray.com/user/downloadSubjectPublicKey?username=sbt'
+    packages:
+      - sbt=1.2.7
+
 before_script:
 - git clone https://github.com/manuzhang/github-app
 script:
