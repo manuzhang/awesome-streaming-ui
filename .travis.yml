@@ -2,7 +2,11 @@ dist: trusty
 language: node_js
 node_js:
 - 8
-cache: yarn
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
+
 jdk: oraclejdk8
 
 addons:
@@ -13,8 +17,10 @@ addons:
     packages:
       - sbt=1.2.7
 
+
 before_script:
 - git clone https://github.com/manuzhang/github-app
+- export PATH=/usr/bin:$PATH
 script:
 - cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos
  --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
