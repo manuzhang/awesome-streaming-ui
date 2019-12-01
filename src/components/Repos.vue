@@ -32,6 +32,7 @@
             <td>{{ item.description }}</td>
             <td>{{ item.stars }}</td>
             <td>{{ item.forks }}</td>
+            <td>{{ item.lastTag }}</td>
             <td>{{ item.lastUpdate }}</td>
           </tr>
         </tbody>
@@ -52,6 +53,7 @@ export default {
         { text: "Description", value: "description", sortable: false },
         { text: "Stars", value: "stars" },
         { text: "Forks", value: "forks" },
+        { text: "LastTag", value: "lastTag" },
         { text: "LastUpdate", value: "lastUpdate" }
       ],
       items: repos
