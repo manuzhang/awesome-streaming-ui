@@ -1,4 +1,4 @@
-# awesome-streaming-ui
+# awesome-streaming-ui ![travis-build](https://api.travis-ci.org/manuzhang/awesome-streaming-ui.svg?branch=master)
 
 Website for [awesome-streaming](https://github.com/manuzhang/awesome-streaming) projects with up-to-date metadata (stars, forks, lastUpdate time, etc). 
 
