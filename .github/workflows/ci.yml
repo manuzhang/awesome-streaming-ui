@@ -1,0 +1,29 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    env:
+      - secure: nvqmUTAbzCRbGxJJLpWIvYiUcvN+amP4bAAAylvj/7fE3NwKktChMvFNXxmvdj1f0Ojp8L+UloCK5JHZe5iiHDKC8tR0APAmOa+vP4YqcZ9eG8K3j5ALqs9YlLtcmfKs7AzSh4A+aiSyjsCs4D5zEoRnCA1F1YdQUEGVUUIXGq7JhFJdpS0RNiRLyLO45nfSh4aVSvTjCbEM1UX53gsdIeDqZdDQS0/QKQRR9pXvDg1P6w2MDlkc1VE3AOZbe5nUDv8wVDoDbI1A33ym8waRyIrow9jAx/CA2equRHp5iGklHUSoLWSPzKoOZg/wLhkkOmnf1ztGn5DKG4GSFfp9N0ypiM92oPzUiJpxRsPcn8cwmHGr/IbJHRTZRH+XmiKwu8Z+LOmfAdguRco9JH9KTImDVQoywFAn6MZbaqz0aIimnnqcRaZf5/5sqHWnC7waJyKQSAfgYEVmIvUkpknxo+5Mv3lN5LscS1k1K69ipdjpNyjB2gbI0o1U0eYCzcyXB4a8CPFdp9vJmOI7aFGEhRvgaCFj9FjBocMGJdSenMdf+ERYQtJlW4e4rsog0Yp3dxKdDWIhkgL+pNfwzmyxUro7rrdUYd5VRcqZCPiMG26joEvQNPrQ98iVzC8u7tLhXVEDDu5TjltfXauPQfPF8Oxrl5QAxtfiixH7+LVgL00=
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          name: manuzhang/github-app
+      - uses: olafurpg/setup-scala@v10
+      - name: Refresh data
+        run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
+      - name: Build site
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.x'
+          cache: 'yarn'
+      - name: Build
+        run: yarn run build
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          external_repository: manuzhang/awesome-streaming
