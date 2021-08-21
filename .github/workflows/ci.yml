@@ -24,8 +24,8 @@ jobs:
         with:
           node-version: '12.x'
           cache: 'yarn'
-      - name: Build
-        run: yarn run build
+      - run: yarn
+      - run: yarn run build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
