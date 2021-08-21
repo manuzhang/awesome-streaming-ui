@@ -18,9 +18,9 @@ jobs:
       - name: Set up Scala 
         uses: olafurpg/setup-scala@v10
       - name: Refresh data
+        run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-        run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
