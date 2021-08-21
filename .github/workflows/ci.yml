@@ -10,9 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          name: manuzhang/github-app
-      - uses: olafurpg/setup-scala@v10
+          repository: manuzhang/github-app
       - name: Refresh data
+        uses: olafurpg/setup-scala@v10
         run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
       - name: Build site
         uses: actions/setup-node@v2
