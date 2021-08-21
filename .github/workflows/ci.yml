@@ -8,15 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout 
+        uses: actions/checkout@v2
+      - name: Checkout GitHub App
+        uses: actions/checkout@v2
         with:
           repository: manuzhang/github-app
-      - uses: olafurpg/setup-scala@v10
-      - name: List
-        run: ls -l
+          path: github-app
+      - name: Set up Scala 
+        uses: olafurpg/setup-scala@v10
       - name: Refresh data
         run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token $GITHUB_TOKEN" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
-      - name: Build site
+      - name: Set up Node
         uses: actions/setup-node@v2
         with:
           node-version: '12.x'
