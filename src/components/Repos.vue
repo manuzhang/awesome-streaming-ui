@@ -16,7 +16,7 @@
     <v-data-table
       :headers="headers"
       :items="items"
-      :sort-by="['lastUpdate']"
+      :sort-by="['lastUpdateSortValue']"
       :sort-desc="[true]"
       :items-per-page="100"
       :search="search"
@@ -44,6 +44,15 @@
 <script>
 import repos from "../assets/repos.json";
 
+function normalizeRepos(items) {
+  return items
+    .map(item => ({
+      ...item,
+      lastUpdateSortValue: Date.parse(item.lastUpdate) || 0
+    }))
+    .sort((left, right) => right.lastUpdateSortValue - left.lastUpdateSortValue);
+}
+
 export default {
   data() {
     return {
@@ -54,9 +63,9 @@ export default {
         { text: "Stars", value: "stars" },
         { text: "Forks", value: "forks" },
         { text: "LastTag", value: "lastTag" },
-        { text: "LastUpdate", value: "lastUpdate" }
+        { text: "LastUpdate", value: "lastUpdateSortValue" }
       ],
-      items: repos
+      items: normalizeRepos(repos)
     };
   },
   methods: {
