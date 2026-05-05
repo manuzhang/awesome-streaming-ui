@@ -8,8 +8,8 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "vue": "^3.0.0",
-    "vuetify": "^3.0.0"
+    "vue": "^2.6.10",
+    "vuetify": "^2.6.10"
   },
   "devDependencies": {
     "@babel/polyfill": "^7.4.4",
