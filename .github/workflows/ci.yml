@@ -12,9 +12,9 @@ jobs:
     
     steps:
       - name: Checkout 
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: Checkout GitHub App
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
           repository: manuzhang/github-app
           path: github-app
@@ -23,10 +23,11 @@ jobs:
       - name: Refresh data
         run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token ${{ secrets.GITHUB_TOKEN }}" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
       - name: Set up Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v6
         with:
           node-version: '12.x'
           cache: 'yarn'
+          cache-dependency-path: yarn.lock
       - run: yarn
       - run: yarn run build
       - name: Deploy
