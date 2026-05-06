@@ -13,40 +13,16 @@ jobs:
     steps:
       - name: Checkout 
         uses: actions/checkout@v6
-      - name: Checkout GitHub App
-        uses: actions/checkout@v6
-        with:
-          repository: manuzhang/github-app
-          path: github-app
-      - name: Set up Scala 
-        uses: olafurpg/setup-scala@v10
-      - name: Refresh data
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            if (
-              cd github-app &&
-              sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token ${{ secrets.GITHUB_TOKEN }}" &&
-              cp awesome-streaming-repos.json ../src/assets/repos.json
-            ); then
-              exit 0
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              exit 1
-            fi
-            echo "Refresh data failed on attempt $attempt. Retrying in 15 seconds..."
-            sleep 15
-          done
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           node-version: '12.x'
           cache: 'yarn'
           cache-dependency-path: yarn.lock
-      - name: Backfill lastUpdate
+      - name: Sync repos metadata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/backfill-last-update.js src/assets/repos.json
+        run: node scripts/sync-repos-metadata.js src/assets/repos.json
       - run: yarn
       - run: yarn run build
       - name: Deploy
