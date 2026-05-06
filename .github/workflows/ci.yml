@@ -28,6 +28,10 @@ jobs:
           node-version: '12.x'
           cache: 'yarn'
           cache-dependency-path: yarn.lock
+      - name: Backfill lastUpdate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/backfill-last-update.js src/assets/repos.json
       - run: yarn
       - run: yarn run build
       - name: Deploy
