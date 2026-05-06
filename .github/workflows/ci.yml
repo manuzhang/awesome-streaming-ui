@@ -21,7 +21,22 @@ jobs:
       - name: Set up Scala 
         uses: olafurpg/setup-scala@v10
       - name: Refresh data
-        run:  cd github-app && sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token ${{ secrets.GITHUB_TOKEN }}" && cp awesome-streaming-repos.json ../src/assets/repos.json && cd ..
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if (
+              cd github-app &&
+              sbt "runMain io.github.manuzhang.graphql.GetAwesomeStreamingRepos --auth-token ${{ secrets.GITHUB_TOKEN }}" &&
+              cp awesome-streaming-repos.json ../src/assets/repos.json
+            ); then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Refresh data failed on attempt $attempt. Retrying in 15 seconds..."
+            sleep 15
+          done
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
