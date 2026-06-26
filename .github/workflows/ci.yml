@@ -12,22 +12,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout 
-        uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '12.x'
-          cache: 'yarn'
-          cache-dependency-path: yarn.lock
+          node-version: '20.x'
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: yarn install --immutable
       - name: Sync repos metadata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync-repos-metadata.js src/assets/repos.json
-      - run: yarn
-      - run: yarn run build
+      - name: Build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: yarn run build
       - name: Deploy
         if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v3
