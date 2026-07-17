@@ -5809,10 +5809,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"http-parser-js@npm:>=0.4.0 <0.4.11":
-  version: 0.4.10
-  resolution: "http-parser-js@npm:0.4.10"
-  checksum: 10c0/5b023c7722cbefd68b86416e32bd63838ec673ffd68c656c5c221011404779664b0914413e1b42760bcf6ee1fd53e1fd63ef2777862d45e2e8b58aaec294380a
+"http-parser-js@npm:>=0.5.1":
+  version: 0.5.10
+  resolution: "http-parser-js@npm:0.5.10"
+  checksum: 10c0/8bbcf1832a8d70b2bd515270112116333add88738a2cc05bfb94ba6bde3be4b33efee5611584113818d2bcf654fdc335b652503be5a6b4c0b95e46f214187d93
   languageName: node
   linkType: hard
 
@@ -11134,13 +11134,13 @@ __metadata:
   linkType: hard
 
 "websocket-driver@npm:>=0.5.1":
-  version: 0.7.3
-  resolution: "websocket-driver@npm:0.7.3"
+  version: 0.7.5
+  resolution: "websocket-driver@npm:0.7.5"
   dependencies:
-    http-parser-js: "npm:>=0.4.0 <0.4.11"
+    http-parser-js: "npm:>=0.5.1"
     safe-buffer: "npm:>=5.1.0"
     websocket-extensions: "npm:>=0.1.1"
-  checksum: 10c0/0dbab147cae211111d5ec0ce268a78e4d34ab42f73c52a27a8d95e762a2646642e2fee4de44910244cb5f1d89238e6f7ebe534bfc0b8f3726d090dbcee00cf18
+  checksum: 10c0/843a3c9f529ce07f2721829f70f62986247525ab22625e857b69da13dc90967bacfe57b85e196801b565cd797e309ddd5b06fa8435732e34e8a8ab6201d7abed
   languageName: node
   linkType: hard
 
