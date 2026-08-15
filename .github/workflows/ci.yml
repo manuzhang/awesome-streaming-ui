@@ -24,6 +24,8 @@ jobs:
         run: corepack enable
       - name: Install dependencies
         run: yarn install --immutable
+      - name: Test metadata parser
+        run: node --test scripts/sync-repos-metadata.test.js
       - name: Sync repos metadata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
