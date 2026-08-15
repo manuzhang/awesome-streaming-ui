@@ -73,3 +73,94 @@ test("reuses archived metadata without fetching GitHub", async function() {
     isArchived: true
   });
 });
+
+test("fetches metadata once for an unseen archived entry", async function() {
+  const entry = {
+    name: "New archived project",
+    link: "https://github.com/example/new-archived",
+    description: "Archived description.",
+    repoRef: { owner: "example", repo: "new-archived" },
+    isArchived: true
+  };
+  let fetchCount = 0;
+
+  const item = await buildRepoItem(entry, null, async function() {
+    fetchCount += 1;
+    return {
+      stars: 20,
+      forks: 4,
+      lastTag: "v2.0.0",
+      lastUpdate: "2025-01-01T00:00:00Z",
+      isArchived: false
+    };
+  });
+
+  assert.equal(fetchCount, 1);
+  assert.deepEqual(item, {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    stars: 20,
+    forks: 4,
+    lastTag: "v2.0.0",
+    lastUpdate: "2025-01-01T00:00:00Z",
+    isArchived: true
+  });
+});
+
+test("refreshes an archived entry when stored metadata is incomplete", async function() {
+  const entry = {
+    name: "Archived project",
+    link: "https://github.com/example/archived",
+    description: "Archived description.",
+    repoRef: { owner: "example", repo: "archived" },
+    isArchived: true
+  };
+  const previousItem = {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    stars: null,
+    forks: null,
+    lastTag: null,
+    lastUpdate: null,
+    isArchived: true
+  };
+  let fetchCount = 0;
+
+  const item = await buildRepoItem(entry, previousItem, async function() {
+    fetchCount += 1;
+    return {
+      stars: 20,
+      forks: 4,
+      lastTag: null,
+      lastUpdate: "2025-01-01T00:00:00Z",
+      isArchived: true
+    };
+  });
+
+  assert.equal(fetchCount, 1);
+  assert.equal(item.lastUpdate, "2025-01-01T00:00:00Z");
+});
+
+test("uses the README archive status for active entries", async function() {
+  const entry = {
+    name: "Active project",
+    link: "https://github.com/example/active",
+    description: "Active description.",
+    repoRef: { owner: "example", repo: "active" },
+    isArchived: false
+  };
+
+  const item = await buildRepoItem(entry, null, async function() {
+    return {
+      stars: 30,
+      forks: 6,
+      lastTag: "v3.0.0",
+      lastUpdate: "2026-01-01T00:00:00Z",
+      isArchived: true
+    };
+  });
+
+  assert.equal(item.isArchived, false);
+});

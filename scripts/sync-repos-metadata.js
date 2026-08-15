@@ -268,8 +268,20 @@ function parseReadmeEntries(readmeText) {
   return entries;
 }
 
+function hasStoredMetadata(item) {
+  return (
+    item &&
+    item.stars !== null &&
+    item.stars !== undefined &&
+    item.forks !== null &&
+    item.forks !== undefined &&
+    item.lastUpdate !== null &&
+    item.lastUpdate !== undefined
+  );
+}
+
 async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
-  if (entry.isArchived) {
+  if (entry.isArchived && hasStoredMetadata(previousItem)) {
     return Object.assign(
       {
         stars: null,
@@ -296,7 +308,7 @@ async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
     forks: metadata.forks,
     lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
     lastUpdate: metadata.lastUpdate,
-    isArchived: metadata.isArchived
+    isArchived: entry.isArchived
   };
 }
 
@@ -400,12 +412,22 @@ async function main() {
   const archivedCount = entries.filter(function(entry) {
     return entry.isArchived;
   }).length;
+  const archivedToSyncCount = entries.filter(function(entry) {
+    if (!entry.isArchived) {
+      return false;
+    }
+
+    const previousItem = existingByRepoKey.get(repoKey(entry.repoRef)) || null;
+    return !hasStoredMetadata(previousItem);
+  }).length;
 
   console.log(
     "Syncing metadata for " +
       (entries.length - archivedCount) +
-      " active repos; reusing " +
-      archivedCount +
+      " active repos and " +
+      archivedToSyncCount +
+      " archived repos; reusing " +
+      (archivedCount - archivedToSyncCount) +
       " archived repos"
   );
 
@@ -421,7 +443,11 @@ async function main() {
           fetchRepoMetadata,
           token
         );
-        console.log((entry.isArchived ? "Reused archived metadata for " : "Synced ") + entry.name);
+        console.log(
+          (entry.isArchived && hasStoredMetadata(previousItem)
+            ? "Reused archived metadata for "
+            : "Synced ") + entry.name
+        );
       } catch (error) {
         if (previousItem) {
           items[task.index] = Object.assign({}, previousItem, {
