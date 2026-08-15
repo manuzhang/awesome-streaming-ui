@@ -243,7 +243,7 @@ function parseReadmeEntries(readmeText) {
 
   bullets.forEach(function(bullet) {
     const match = bullet.match(
-      /^-\s+\[(.+?)\]\s*\((https?:\/\/[^)]+)\)(?:\s+\[[^\]]*])?\s*-\s*(.+)$/
+      /^-\s+\[(.+?)\]\s*\((https?:\/\/[^)]+)\)(?:\s+(?:\[[^\]]*]|<sub>.*?<\/sub>))*\s*-\s*(.+)$/
     );
 
     if (!match) {
@@ -414,7 +414,13 @@ async function main() {
   console.log("Wrote " + items.length + " repos to " + options.outputPath);
 }
 
-main().catch(function(error) {
-  console.error(error.stack || error.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(function(error) {
+    console.error(error.stack || error.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  parseReadmeEntries: parseReadmeEntries
+};
