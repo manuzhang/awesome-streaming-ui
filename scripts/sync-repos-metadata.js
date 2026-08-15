@@ -260,11 +260,44 @@ function parseReadmeEntries(readmeText) {
       name: match[1].trim(),
       link: link,
       description: match[3].trim(),
-      repoRef: repoRef
+      repoRef: repoRef,
+      isArchived: /!\[Archived\]\[archived-badge\]/i.test(bullet)
     });
   });
 
   return entries;
+}
+
+async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
+  if (entry.isArchived) {
+    return Object.assign(
+      {
+        stars: null,
+        forks: null,
+        lastTag: null,
+        lastUpdate: null
+      },
+      previousItem || {},
+      {
+        name: entry.name,
+        link: entry.link,
+        description: entry.description,
+        isArchived: true
+      }
+    );
+  }
+
+  const metadata = await fetchMetadata(entry.repoRef, token);
+  return {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    stars: metadata.stars,
+    forks: metadata.forks,
+    lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
+    lastUpdate: metadata.lastUpdate,
+    isArchived: metadata.isArchived
+  };
 }
 
 async function fetchRepoMetadata(repoRef, token) {
@@ -364,8 +397,17 @@ async function main() {
     };
   });
   const failures = [];
+  const archivedCount = entries.filter(function(entry) {
+    return entry.isArchived;
+  }).length;
 
-  console.log("Syncing metadata for " + entries.length + " repos");
+  console.log(
+    "Syncing metadata for " +
+      (entries.length - archivedCount) +
+      " active repos; reusing " +
+      archivedCount +
+      " archived repos"
+  );
 
   await createWorkQueue(
     tasks,
@@ -373,18 +415,13 @@ async function main() {
       const entry = task.entry;
       const previousItem = existingByRepoKey.get(repoKey(entry.repoRef)) || null;
       try {
-        const metadata = await fetchRepoMetadata(entry.repoRef, token);
-        items[task.index] = {
-          name: entry.name,
-          link: entry.link,
-          description: entry.description,
-          stars: metadata.stars,
-          forks: metadata.forks,
-          lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
-          lastUpdate: metadata.lastUpdate,
-          isArchived: metadata.isArchived
-        };
-        console.log("Synced " + entry.name);
+        items[task.index] = await buildRepoItem(
+          entry,
+          previousItem,
+          fetchRepoMetadata,
+          token
+        );
+        console.log((entry.isArchived ? "Reused archived metadata for " : "Synced ") + entry.name);
       } catch (error) {
         if (previousItem) {
           items[task.index] = Object.assign({}, previousItem, {
@@ -422,5 +459,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  buildRepoItem: buildRepoItem,
   parseReadmeEntries: parseReadmeEntries
 };
