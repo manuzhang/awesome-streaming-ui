@@ -1,7 +1,11 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { buildRepoItem, parseReadmeEntries } = require("./sync-repos-metadata");
+const {
+  buildRepoItem,
+  parseReadmeEntries,
+  reusePreviousItem
+} = require("./sync-repos-metadata");
 
 test("parses legacy and badge-based GitHub entries", function() {
   const readme = [
@@ -91,6 +95,7 @@ test("fetches metadata once for an unseen archived entry", async function() {
       forks: 4,
       lastTag: "v2.0.0",
       lastUpdate: "2025-01-01T00:00:00Z",
+      releaseLookupSucceeded: true,
       isArchived: false
     };
   });
@@ -104,6 +109,7 @@ test("fetches metadata once for an unseen archived entry", async function() {
     forks: 4,
     lastTag: "v2.0.0",
     lastUpdate: "2025-01-01T00:00:00Z",
+    releaseLookupSucceeded: true,
     isArchived: true
   });
 });
@@ -135,6 +141,7 @@ test("refreshes an archived entry when stored metadata is incomplete", async fun
       forks: 4,
       lastTag: null,
       lastUpdate: "2025-01-01T00:00:00Z",
+      releaseLookupSucceeded: true,
       isArchived: true
     };
   });
@@ -158,9 +165,72 @@ test("uses the README archive status for active entries", async function() {
       forks: 6,
       lastTag: "v3.0.0",
       lastUpdate: "2026-01-01T00:00:00Z",
+      releaseLookupSucceeded: true,
       isArchived: true
     };
   });
 
   assert.equal(item.isArchived, false);
+});
+
+test("retries a failed archived release lookup", async function() {
+  const entry = {
+    name: "Archived project",
+    link: "https://github.com/example/archived",
+    description: "Archived description.",
+    repoRef: { owner: "example", repo: "archived" },
+    isArchived: true
+  };
+  let fetchCount = 0;
+
+  const failedItem = await buildRepoItem(entry, null, async function() {
+    fetchCount += 1;
+    return {
+      stars: 20,
+      forks: 4,
+      lastTag: null,
+      lastUpdate: "2025-01-01T00:00:00Z",
+      releaseLookupSucceeded: false,
+      isArchived: true
+    };
+  });
+  const completeItem = await buildRepoItem(entry, failedItem, async function() {
+    fetchCount += 1;
+    return {
+      stars: 20,
+      forks: 4,
+      lastTag: null,
+      lastUpdate: "2025-01-01T00:00:00Z",
+      releaseLookupSucceeded: true,
+      isArchived: true
+    };
+  });
+  await buildRepoItem(entry, completeItem, async function() {
+    fetchCount += 1;
+    throw new Error("Successful empty release lookup should be reused");
+  });
+
+  assert.equal(fetchCount, 2);
+});
+
+test("applies the README archive status when reusing metadata after a failure", function() {
+  const entry = {
+    name: "Active project",
+    link: "https://github.com/example/project",
+    description: "Active description.",
+    isArchived: false
+  };
+  const previousItem = {
+    name: "Archived project",
+    link: entry.link,
+    description: "Archived description.",
+    stars: 20,
+    forks: 4,
+    lastTag: "v2.0.0",
+    lastUpdate: "2025-01-01T00:00:00Z",
+    releaseLookupSucceeded: true,
+    isArchived: true
+  };
+
+  assert.equal(reusePreviousItem(entry, previousItem).isArchived, false);
 });

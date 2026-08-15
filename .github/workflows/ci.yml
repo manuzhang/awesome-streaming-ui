@@ -26,6 +26,14 @@ jobs:
         run: yarn install --immutable
       - name: Test metadata parser
         run: node --test scripts/sync-repos-metadata.test.js
+      - name: Restore repos metadata
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: src/assets/repos.json
+          key: repos-metadata-${{ github.run_id }}
+          restore-keys: |
+            repos-metadata-
       - name: Sync repos metadata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -34,6 +42,12 @@ jobs:
         env:
           NODE_OPTIONS: --openssl-legacy-provider
         run: yarn run build
+      - name: Save repos metadata
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: src/assets/repos.json
+          key: repos-metadata-${{ github.run_id }}
       - name: Deploy
         if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v3

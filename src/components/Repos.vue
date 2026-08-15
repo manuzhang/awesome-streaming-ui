@@ -40,7 +40,11 @@
       >
         <template v-slot:body="{ items }">
           <tbody>
-            <tr v-for="item in items" :key="item.name">
+            <tr
+              v-for="item in items"
+              :key="item.name"
+              :class="{ 'archived-project': section.isArchived }"
+            >
               <td>
                 <a :href="item.link" target="_blank">{{ item.name }}</a>
               </td>
@@ -125,5 +129,11 @@ a {
 
 .archived-section {
   margin-top: 24px;
+  background-color: #f5f5f5;
+}
+
+.archived-project,
+.archived-project:hover {
+  background-color: #f5f5f5 !important;
 }
 </style>

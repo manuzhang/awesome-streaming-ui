@@ -276,27 +276,24 @@ function hasStoredMetadata(item) {
     item.forks !== null &&
     item.forks !== undefined &&
     item.lastUpdate !== null &&
-    item.lastUpdate !== undefined
+    item.lastUpdate !== undefined &&
+    (item.releaseLookupSucceeded === true ||
+      (item.releaseLookupSucceeded === undefined && item.lastTag != null))
   );
+}
+
+function reusePreviousItem(entry, previousItem) {
+  return Object.assign({}, previousItem, {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    isArchived: entry.isArchived
+  });
 }
 
 async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
   if (entry.isArchived && hasStoredMetadata(previousItem)) {
-    return Object.assign(
-      {
-        stars: null,
-        forks: null,
-        lastTag: null,
-        lastUpdate: null
-      },
-      previousItem || {},
-      {
-        name: entry.name,
-        link: entry.link,
-        description: entry.description,
-        isArchived: true
-      }
-    );
+    return reusePreviousItem(entry, previousItem);
   }
 
   const metadata = await fetchMetadata(entry.repoRef, token);
@@ -308,6 +305,7 @@ async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
     forks: metadata.forks,
     lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
     lastUpdate: metadata.lastUpdate,
+    releaseLookupSucceeded: metadata.releaseLookupSucceeded,
     isArchived: entry.isArchived
   };
 }
@@ -325,6 +323,7 @@ async function fetchRepoMetadata(repoRef, token) {
     "/releases?per_page=1";
 
   let lastTag = null;
+  let releaseLookupSucceeded = true;
   try {
     const releases = await requestJsonWithRetry(releasesUrl, token, 2);
     if (
@@ -336,6 +335,7 @@ async function fetchRepoMetadata(repoRef, token) {
       lastTag = releases[0].tag_name;
     }
   } catch (error) {
+    releaseLookupSucceeded = false;
     console.warn(
       "Unable to fetch releases for " +
         repoRef.owner +
@@ -351,6 +351,7 @@ async function fetchRepoMetadata(repoRef, token) {
     forks: payload.forks_count,
     lastTag: lastTag,
     lastUpdate: payload.pushed_at,
+    releaseLookupSucceeded: releaseLookupSucceeded,
     isArchived: payload.archived
   };
 }
@@ -450,11 +451,7 @@ async function main() {
         );
       } catch (error) {
         if (previousItem) {
-          items[task.index] = Object.assign({}, previousItem, {
-            name: entry.name,
-            link: entry.link,
-            description: entry.description
-          });
+          items[task.index] = reusePreviousItem(entry, previousItem);
           console.warn("Fell back to existing metadata for " + entry.name + ": " + error.message);
           return;
         }
@@ -486,5 +483,6 @@ if (require.main === module) {
 
 module.exports = {
   buildRepoItem: buildRepoItem,
-  parseReadmeEntries: parseReadmeEntries
+  parseReadmeEntries: parseReadmeEntries,
+  reusePreviousItem: reusePreviousItem
 };
