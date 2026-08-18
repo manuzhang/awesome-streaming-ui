@@ -275,8 +275,8 @@ function hasStoredMetadata(item) {
     item.stars !== undefined &&
     item.forks !== null &&
     item.forks !== undefined &&
-    item.lastUpdate !== null &&
-    item.lastUpdate !== undefined &&
+    (item.repositoryLookupSucceeded === true ||
+      (item.repositoryLookupSucceeded === undefined && item.lastUpdate != null)) &&
     (item.releaseLookupSucceeded === true ||
       (item.releaseLookupSucceeded === undefined && item.lastTag != null))
   );
@@ -305,6 +305,7 @@ async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
     forks: metadata.forks,
     lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
     lastUpdate: metadata.lastUpdate,
+    repositoryLookupSucceeded: metadata.repositoryLookupSucceeded,
     releaseLookupSucceeded: metadata.releaseLookupSucceeded,
     isArchived: entry.isArchived
   };
@@ -351,6 +352,7 @@ async function fetchRepoMetadata(repoRef, token) {
     forks: payload.forks_count,
     lastTag: lastTag,
     lastUpdate: payload.pushed_at,
+    repositoryLookupSucceeded: true,
     releaseLookupSucceeded: releaseLookupSucceeded,
     isArchived: payload.archived
   };

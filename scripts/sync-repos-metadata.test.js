@@ -95,6 +95,7 @@ test("fetches metadata once for an unseen archived entry", async function() {
       forks: 4,
       lastTag: "v2.0.0",
       lastUpdate: "2025-01-01T00:00:00Z",
+      repositoryLookupSucceeded: true,
       releaseLookupSucceeded: true,
       isArchived: false
     };
@@ -109,6 +110,7 @@ test("fetches metadata once for an unseen archived entry", async function() {
     forks: 4,
     lastTag: "v2.0.0",
     lastUpdate: "2025-01-01T00:00:00Z",
+    repositoryLookupSucceeded: true,
     releaseLookupSucceeded: true,
     isArchived: true
   });
@@ -141,6 +143,7 @@ test("refreshes an archived entry when stored metadata is incomplete", async fun
       forks: 4,
       lastTag: null,
       lastUpdate: "2025-01-01T00:00:00Z",
+      repositoryLookupSucceeded: true,
       releaseLookupSucceeded: true,
       isArchived: true
     };
@@ -165,6 +168,7 @@ test("uses the README archive status for active entries", async function() {
       forks: 6,
       lastTag: "v3.0.0",
       lastUpdate: "2026-01-01T00:00:00Z",
+      repositoryLookupSucceeded: true,
       releaseLookupSucceeded: true,
       isArchived: true
     };
@@ -190,6 +194,7 @@ test("retries a failed archived release lookup", async function() {
       forks: 4,
       lastTag: null,
       lastUpdate: "2025-01-01T00:00:00Z",
+      repositoryLookupSucceeded: true,
       releaseLookupSucceeded: false,
       isArchived: true
     };
@@ -201,6 +206,7 @@ test("retries a failed archived release lookup", async function() {
       forks: 4,
       lastTag: null,
       lastUpdate: "2025-01-01T00:00:00Z",
+      repositoryLookupSucceeded: true,
       releaseLookupSucceeded: true,
       isArchived: true
     };
@@ -211,6 +217,38 @@ test("retries a failed archived release lookup", async function() {
   });
 
   assert.equal(fetchCount, 2);
+});
+
+test("reuses an archived entry with a valid null push timestamp", async function() {
+  const entry = {
+    name: "Empty archived project",
+    link: "https://github.com/example/empty-archived",
+    description: "Archived repository without commits.",
+    repoRef: { owner: "example", repo: "empty-archived" },
+    isArchived: true
+  };
+  let fetchCount = 0;
+
+  const completeItem = await buildRepoItem(entry, null, async function() {
+    fetchCount += 1;
+    return {
+      stars: 0,
+      forks: 0,
+      lastTag: null,
+      lastUpdate: null,
+      repositoryLookupSucceeded: true,
+      releaseLookupSucceeded: true,
+      isArchived: true
+    };
+  });
+  const reusedItem = await buildRepoItem(entry, completeItem, async function() {
+    fetchCount += 1;
+    throw new Error("Successful null push timestamp should be reused");
+  });
+
+  assert.equal(fetchCount, 1);
+  assert.equal(reusedItem.lastUpdate, null);
+  assert.equal(reusedItem.repositoryLookupSucceeded, true);
 });
 
 test("applies the README archive status when reusing metadata after a failure", function() {
