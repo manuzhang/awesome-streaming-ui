@@ -260,11 +260,55 @@ function parseReadmeEntries(readmeText) {
       name: match[1].trim(),
       link: link,
       description: match[3].trim(),
-      repoRef: repoRef
+      repoRef: repoRef,
+      isArchived: /!\[Archived\]\[archived-badge\]/i.test(bullet)
     });
   });
 
   return entries;
+}
+
+function hasStoredMetadata(item) {
+  return (
+    item &&
+    item.stars !== null &&
+    item.stars !== undefined &&
+    item.forks !== null &&
+    item.forks !== undefined &&
+    (item.repositoryLookupSucceeded === true ||
+      (item.repositoryLookupSucceeded === undefined && item.lastUpdate != null)) &&
+    (item.releaseLookupSucceeded === true ||
+      (item.releaseLookupSucceeded === undefined && item.lastTag != null))
+  );
+}
+
+function reusePreviousItem(entry, previousItem) {
+  return Object.assign({}, previousItem, {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    isArchived: entry.isArchived
+  });
+}
+
+async function buildRepoItem(entry, previousItem, fetchMetadata, token) {
+  if (entry.isArchived && hasStoredMetadata(previousItem)) {
+    return reusePreviousItem(entry, previousItem);
+  }
+
+  const metadata = await fetchMetadata(entry.repoRef, token);
+  return {
+    name: entry.name,
+    link: entry.link,
+    description: entry.description,
+    stars: metadata.stars,
+    forks: metadata.forks,
+    lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
+    lastUpdate: metadata.lastUpdate,
+    repositoryLookupSucceeded: metadata.repositoryLookupSucceeded,
+    releaseLookupSucceeded: metadata.releaseLookupSucceeded,
+    isArchived: entry.isArchived
+  };
 }
 
 async function fetchRepoMetadata(repoRef, token) {
@@ -280,6 +324,7 @@ async function fetchRepoMetadata(repoRef, token) {
     "/releases?per_page=1";
 
   let lastTag = null;
+  let releaseLookupSucceeded = true;
   try {
     const releases = await requestJsonWithRetry(releasesUrl, token, 2);
     if (
@@ -291,6 +336,7 @@ async function fetchRepoMetadata(repoRef, token) {
       lastTag = releases[0].tag_name;
     }
   } catch (error) {
+    releaseLookupSucceeded = false;
     console.warn(
       "Unable to fetch releases for " +
         repoRef.owner +
@@ -306,6 +352,8 @@ async function fetchRepoMetadata(repoRef, token) {
     forks: payload.forks_count,
     lastTag: lastTag,
     lastUpdate: payload.pushed_at,
+    repositoryLookupSucceeded: true,
+    releaseLookupSucceeded: releaseLookupSucceeded,
     isArchived: payload.archived
   };
 }
@@ -364,8 +412,27 @@ async function main() {
     };
   });
   const failures = [];
+  const archivedCount = entries.filter(function(entry) {
+    return entry.isArchived;
+  }).length;
+  const archivedToSyncCount = entries.filter(function(entry) {
+    if (!entry.isArchived) {
+      return false;
+    }
 
-  console.log("Syncing metadata for " + entries.length + " repos");
+    const previousItem = existingByRepoKey.get(repoKey(entry.repoRef)) || null;
+    return !hasStoredMetadata(previousItem);
+  }).length;
+
+  console.log(
+    "Syncing metadata for " +
+      (entries.length - archivedCount) +
+      " active repos and " +
+      archivedToSyncCount +
+      " archived repos; reusing " +
+      (archivedCount - archivedToSyncCount) +
+      " archived repos"
+  );
 
   await createWorkQueue(
     tasks,
@@ -373,25 +440,20 @@ async function main() {
       const entry = task.entry;
       const previousItem = existingByRepoKey.get(repoKey(entry.repoRef)) || null;
       try {
-        const metadata = await fetchRepoMetadata(entry.repoRef, token);
-        items[task.index] = {
-          name: entry.name,
-          link: entry.link,
-          description: entry.description,
-          stars: metadata.stars,
-          forks: metadata.forks,
-          lastTag: metadata.lastTag || (previousItem && previousItem.lastTag) || null,
-          lastUpdate: metadata.lastUpdate,
-          isArchived: metadata.isArchived
-        };
-        console.log("Synced " + entry.name);
+        items[task.index] = await buildRepoItem(
+          entry,
+          previousItem,
+          fetchRepoMetadata,
+          token
+        );
+        console.log(
+          (entry.isArchived && hasStoredMetadata(previousItem)
+            ? "Reused archived metadata for "
+            : "Synced ") + entry.name
+        );
       } catch (error) {
         if (previousItem) {
-          items[task.index] = Object.assign({}, previousItem, {
-            name: entry.name,
-            link: entry.link,
-            description: entry.description
-          });
+          items[task.index] = reusePreviousItem(entry, previousItem);
           console.warn("Fell back to existing metadata for " + entry.name + ": " + error.message);
           return;
         }
@@ -422,5 +484,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  parseReadmeEntries: parseReadmeEntries
+  buildRepoItem: buildRepoItem,
+  parseReadmeEntries: parseReadmeEntries,
+  reusePreviousItem: reusePreviousItem
 };

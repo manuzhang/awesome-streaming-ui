@@ -2,7 +2,7 @@
 
 Website for [awesome-streaming](https://github.com/manuzhang/awesome-streaming) projects with up-to-date metadata (stars, forks, lastUpdate time, etc).
 
-The metadata is fetched daily by syncing the upstream README and enriching GitHub repository entries through the GitHub REST API in [scripts/sync-repos-metadata.js](./scripts/sync-repos-metadata.js).
+The metadata is fetched daily by syncing the upstream README and enriching active GitHub repository entries through the GitHub REST API in [scripts/sync-repos-metadata.js](./scripts/sync-repos-metadata.js). After initial enrichment, archived entries retain their last known metadata without additional GitHub API requests. Non-PR CI runs cache the generated metadata between refreshes.
 
 This project is built with [vue-cli](https://cli.vuejs.org/), [vuetify](https://vuetifyjs.com) and [github-corners](http://tholman.com/github-corners/), and published to [GitHub pages](https://docs.travis-ci.com/user/deployment/pages/)
 

@@ -1,44 +1,64 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <span id="title">Repos</span>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <v-btn dark small color="light-blue" v-on="on" @click="goto">
-            <v-icon>add</v-icon>
-          </v-btn>
-        </template>
-        <span>Add your own awesome-streaming project</span>
-      </v-tooltip>
-      <v-spacer />
-      <v-text-field v-model="search" append-icon="search" label="Search" single-line hide-details></v-text-field>
-    </v-card-title>
-    <v-data-table
-      :headers="headers"
-      :items="items"
-      :sort-by="['lastUpdateSortValue']"
-      :sort-desc="[true]"
-      :items-per-page="100"
-      :search="search"
-      hide-default-footer
-      class="elevation-1"
+  <div>
+    <v-card
+      v-for="section in sections"
+      :key="section.title"
+      :class="{ 'archived-section': section.isArchived }"
     >
-      <template v-slot:body="{ items }">
-        <tbody>
-          <tr v-for="item in items" :key="item.name">
-            <td>
-              <a :href="item.link" target="_blank">{{ item.name }}</a>
-            </td>
-            <td>{{ item.description }}</td>
-            <td>{{ item.stars }}</td>
-            <td>{{ item.forks }}</td>
-            <td>{{ item.lastTag }}</td>
-            <td>{{ item.lastUpdate }}</td>
-          </tr>
-        </tbody>
-      </template>
-    </v-data-table>
-  </v-card>
+      <v-card-title>
+        <span class="section-title">{{ section.title }}</span>
+        <v-chip small outlined>{{ sectionItems(section).length }}</v-chip>
+        <v-tooltip v-if="!section.isArchived" bottom>
+          <template v-slot:activator="{ on }">
+            <v-btn dark small color="light-blue" class="add-project" v-on="on" @click="goto">
+              <v-icon>add</v-icon>
+            </v-btn>
+          </template>
+          <span>Add your own awesome-streaming project</span>
+        </v-tooltip>
+        <v-spacer />
+        <v-text-field
+          v-model="section.search"
+          append-icon="search"
+          :label="'Search ' + section.title.toLowerCase() + ' projects'"
+          single-line
+          hide-details
+        ></v-text-field>
+      </v-card-title>
+      <v-card-subtitle v-if="section.isArchived">
+        Archived projects retain their last known metadata without daily refreshes.
+      </v-card-subtitle>
+      <v-data-table
+        :headers="headers"
+        :items="sectionItems(section)"
+        :sort-by="['lastUpdateSortValue']"
+        :sort-desc="[true]"
+        :items-per-page="100"
+        :search="section.search"
+        hide-default-footer
+        class="elevation-1"
+      >
+        <template v-slot:body="{ items }">
+          <tbody>
+            <tr
+              v-for="item in items"
+              :key="item.name"
+              :class="{ 'archived-project': section.isArchived }"
+            >
+              <td>
+                <a :href="item.link" target="_blank">{{ item.name }}</a>
+              </td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.stars }}</td>
+              <td>{{ item.forks }}</td>
+              <td>{{ item.lastTag }}</td>
+              <td>{{ item.lastUpdate }}</td>
+            </tr>
+          </tbody>
+        </template>
+      </v-data-table>
+    </v-card>
+  </div>
 </template>
 
 <script>
@@ -56,7 +76,10 @@ function normalizeRepos(items) {
 export default {
   data() {
     return {
-      search: "",
+      sections: [
+        { title: "Active", isArchived: false, search: "" },
+        { title: "Archived", isArchived: true, search: "" }
+      ],
       headers: [
         { text: "Name", value: "name" },
         { text: "Description", value: "description", sortable: false },
@@ -71,6 +94,9 @@ export default {
   methods: {
     goto: function() {
       window.open("https://github.com/manuzhang/awesome-streaming", "_blank");
+    },
+    sectionItems: function(section) {
+      return this.items.filter(item => (item.isArchived === true) === section.isArchived);
     }
   }
 };
@@ -93,7 +119,21 @@ a {
   color: #42b983;
 }
 
-#title {
+.section-title {
   margin-right: 10px;
+}
+
+.add-project {
+  margin-left: 10px;
+}
+
+.archived-section {
+  margin-top: 24px;
+  background-color: #f5f5f5;
+}
+
+.archived-project,
+.archived-project:hover {
+  background-color: #f5f5f5 !important;
 }
 </style>
